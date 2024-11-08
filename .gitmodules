@@ -1,6 +1,3 @@
-[submodule "PytorchLinalg"]
-	path = PytorchLinalg
-	url = https://github.com/devzhk/Pytorch-linalg.git
 [submodule "torch_cg"]
 	path = torch_cg
 	url = https://github.com/sbarratt/torch_cg.git
