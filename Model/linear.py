@@ -2,13 +2,12 @@ import torch
 import torch.nn as nn
 
 class FCN(nn.Module):
-    def __init__(self, n=25, hidden=256, batch_size=64, sparse_tol=1e-5, diagonal_bias=0.1):
+    def __init__(self, n=25, hidden=256, batch_size=64, sparse_tol=1e-5):
         super().__init__()
         
         self.n = n
         self.batch_size = batch_size
         self.sparse_tol = sparse_tol
-        self.diagonal_bias = diagonal_bias
         lower_triangle_size = (n * (n + 1)) // 2
         
         self.fcn1 = nn.Linear(n * n, hidden)
@@ -39,7 +38,6 @@ class FCN(nn.Module):
         
         # Use symmetry to fill the upper triangular part
         diags = torch.diagonal(full_matrix, dim1=1, dim2=2).unsqueeze(-1) * torch.eye(self.n).to(full_matrix.device)
-        full_matrix = full_matrix + torch.transpose(full_matrix, dim0=2, dim1=1) - diags 
-        full_matrix = full_matrix + self.diagonal_bias * torch.eye(self.n).to(full_matrix.device)
+        full_matrix = full_matrix + torch.transpose(full_matrix, dim0=2, dim1=1) - diags
         
         return torch.where(torch.abs(full_matrix) < self.sparse_tol, torch.zeros_like(full_matrix), full_matrix)
