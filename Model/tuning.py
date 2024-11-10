@@ -7,7 +7,7 @@
 
 # EVAL
 # each resulting combination should be scored by a its evaluation of near spartiy (np.allclose)
-# and preconditioning over a few batches of data. 
+# and preconditioning over a few batches of data. Save these results.
 # also save a few images from each set using the eval_utility.inspect_instance to see their patter
 
 # NOTES:
