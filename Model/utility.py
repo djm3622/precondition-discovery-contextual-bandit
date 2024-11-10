@@ -22,7 +22,7 @@ def check_point(current_val_loss, best_val_loss, model, save_path):
     
 def shared_training_loop(epoches, criterion, train_loader, valid_loader, model, lr, size, batch_size, device, verbose, file_path):
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, threshold=1e-3)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, threshold=1e-2)
 
     train_log, valid_log = np.zeros(epoches), np.zeros(epoches)
     best_val_loss = float('inf')
