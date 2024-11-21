@@ -3,7 +3,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
 
-def generate_2d_diffusion_spd(n, bump_range=(3, 4), contrast_range=(0.1, 5.0)):
+def generate_2d_diffusion_spd(n, bump_range=(3, 10), contrast_range=(0.1, 5.0), perturbation_strength=1e-4):
     L = 1.0
     h = L / (n - 1)
     x = np.linspace(0, L, n)
@@ -49,7 +49,28 @@ def generate_2d_diffusion_spd(n, bump_range=(3, 4), contrast_range=(0.1, 5.0)):
     offsets = [-n, -1, 0, 1, n]
     A = sp.diags(diagonals, offsets, format="csr")
     
+    A = perturb_nonzeros(A, perturbation_strength)
+    
     return A, a
+
+def perturb_nonzeros(A, perturbation_strength):
+    # Ensure A is in CSR format for efficient indexing
+    A = A.tocsr()
+
+    # Extract nonzero elements (row, col, and values)
+    rows, cols = A.nonzero()
+    values = A.data
+
+    # Generate random perturbations for the nonzero values
+    perturbations = np.random.uniform(-perturbation_strength, perturbation_strength, size=values.shape)
+    
+    # Apply perturbation to the nonzero values
+    A.data += perturbations
+
+    # Ensure symmetry by adding the transpose of the perturbed matrix
+    A = (A + A.T) / 2
+
+    return A
 
 
 def generate_random_helmholtz(n, density=0.1):

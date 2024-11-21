@@ -21,9 +21,8 @@ class CondEyeDistance(nn.Module):
         avg_loss += torch.mean(torch.norm(inner_product - identity, p='fro', dim=(1, 2))) * self.inv
 
         _, S, _ = torch.linalg.svd(inner_product)
-        deviation_from_one = torch.mean((S - 1)**2) 
         # svd values to be close to 1, low conditioning number
-        avg_loss += deviation_from_one * self.dev 
+        avg_loss += torch.mean((S - 1)**2) * self.dev 
         avg_loss += torch.mean(torch.log(S.max(dim=-1).values) - torch.log(S.min(dim=-1).values)) * self.cond 
 
         # optional regularization

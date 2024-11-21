@@ -5,6 +5,8 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import matplotlib.pyplot as plt
+from torch_cg.torch_cg import cg_batch
+import torch
 
 
 def jacobi_preconditioner(A):
@@ -59,3 +61,11 @@ def check_conditioning(batch_mat, M, ind):
     inner = M @ mat
     cond = np.mean(np.linalg.norm(inner, ord="fro") * np.linalg.norm(np.linalg.inv(inner), ord="fro"))
     print(f'Condition: {cond}')
+    
+    
+def run_solver(inp, output, device):
+    inp, output, b = inp.to(device), output.to(device), torch.randn(32, 25, 1).to(device)
+    xs = cg_batch(lambda x: torch.matmul(inp, x), b, lambda x: torch.matmul(output, x), maxiter=25, verbose=False)
+    return xs
+    
+    

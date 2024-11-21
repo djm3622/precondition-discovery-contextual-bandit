@@ -2,6 +2,8 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from Model import utility as model_utility
+from Data import utility as data_utility
 
 
 def save_logs(train_log, valid_log, log_path):
@@ -34,12 +36,13 @@ def plot_training(train_log, valid_log, title='EX', file_path='ex.png'):
     plt.show()
 
 
-def inspect_instance(A, model, ind, size, batch_size, device, file_path='EX.png'):
+def inspect_instance(A, model, ind, size, batch_size, device, criterion, file_path='EX.png'):
     model.eval()
     with torch.no_grad():
         out = model(A.view(batch_size, size*size).to(device)).view(batch_size, size, size).cpu()
+        print(f'Loss: {criterion(A, out)}')
 
-    inner = A @ out
+    inner = out @ A
     
     acond = torch.mean(torch.norm(A, p="fro", dim=(1, 2)) * torch.norm(torch.linalg.inv(A), p="fro", dim=(1, 2)))
     icond = torch.mean(torch.norm(inner, p="fro", dim=(1, 2)) * torch.norm(torch.linalg.inv(inner), p="fro", dim=(1, 2)))
@@ -73,3 +76,23 @@ def inspect_instance(A, model, ind, size, batch_size, device, file_path='EX.png'
     plt.show()
 
 
+def evaluate_parameters(single_params, parameter, criterion, directory, device, timeit, size=(12, 8)):
+    print(f'========[Evaluating \"{parameter}\"]========')
+        
+    for param in list(single_params[parameter].keys()):
+        print(f'\n++++++++[Running over \"{param}\"]++++++++')
+        p = single_params[parameter][param]
+        print(f'SIZE: {len(p)}')
+        
+        calc_loss_params = {
+            'filenames': p, 
+            'root_dir': directory, 
+            'loss_function': criterion,
+            'timeit': timeit
+        }
+
+        avg, minn, maxx = model_utility.calc_loss(**calc_loss_params)
+                      
+        data_utility.solver_results(minn, directory, device, 'Minimum')
+        data_utility.solver_results(maxx, directory, device, 'Maximum')
+        data_utility.calc_results(avg, minn, maxx, 0, directory, size)

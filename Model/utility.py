@@ -3,6 +3,8 @@ import torch.optim as optim
 import torch
 import numpy as np
 import os
+import re
+from collections import defaultdict
 
 
 def load_model(model, state_dict_path):
@@ -74,3 +76,84 @@ def shared_training_loop(epoches, criterion, train_loader, valid_loader, model, 
     return train_log, valid_log
 
 
+def group_files_by_parameters(file_list):
+
+    regex = r"model_(?P<model>[a-z]+)_l1_(?P<l1>[0-9e\.-]+)_inv_(?P<inv>[0-9e\.-]+)_dev_(?P<dev>[0-9e\.-]+)_cond_(?P<cond>[0-9e\.-]+)_lr_(?P<lr>[0-9e\.-]+)_bsize_(?P<bsize>[0-9]+)"
+    
+    grouped_files = defaultdict(list)
+
+    for file in file_list:
+        match = re.search(regex, file)
+        if match:
+            key = (
+                match.group("model"),
+                match.group("l1"),
+                match.group("inv"),
+                match.group("dev"),
+                match.group("cond"),
+                match.group("lr"),
+                match.group("bsize"),
+            )
+            grouped_files[key].append(file)
+
+    return dict(grouped_files)
+
+
+def get_torch_files(directory):
+    torch_files = [file for file in os.listdir(directory)]
+    return torch_files
+
+
+def group_files_by_single_parameters(file_list):
+    regex = r"model_(?P<model>[a-z]+)_l1_(?P<l1>[0-9e\.-]+)_inv_(?P<inv>[0-9e\.-]+)_dev_(?P<dev>[0-9e\.-]+)_cond_(?P<cond>[0-9e\.-]+)_lr_(?P<lr>[0-9e\.-]+)_bsize_(?P<bsize>[0-9]+)"
+    
+    grouped_by_param = defaultdict(lambda: defaultdict(list))
+    
+    for file in file_list:
+        match = re.search(regex, file)
+        if match:
+            params = match.groupdict()
+            
+            for param, value in params.items():
+                grouped_by_param[param][value].append(file)
+    
+    return grouped_by_param
+
+
+def calc_loss(filenames, root_dir, loss_function, timeit):
+    total_loss = 0.0
+    total_batches = 0
+    
+    mmin = {'name': None, 'value': float('inf')}
+    mmax = {'name': None, 'value': float('-inf')}
+    
+    loader = tqdm(filenames, desc=f'Time', leave=False) if timeit else filenames
+
+    for file in loader:
+        # Load the Torch tensor file
+        data = torch.load(os.path.join(root_dir, file), weights_only=True)
+        
+        inp = data['input']
+        output = data['output']
+        
+        # Ensure inp and output have the same shape
+        if inp.shape != output.shape:
+            raise ValueError(f"Shape mismatch in file {file}: inp shape {inp.shape}, output shape {output.shape}.")
+        
+        # Calculate the loss for the current file
+        loss = loss_function(inp, output)
+        
+        if loss.item() == float('inf') or loss.item() == float('-inf') or loss.item() == float('nan'):
+            print(f'Bad value for loss encountered! {loss.item()}')
+        
+        if loss < mmin['value']:
+            mmin['name'], mmin['value'] = file, loss
+        if loss > mmax['value']:
+            mmax['name'], mmax['value'] = file, loss
+        
+        total_loss += loss.item() * inp.size(0)  # Scale by batch size
+        total_batches += inp.size(0)
+
+    # Compute the average loss
+    average_loss = total_loss / total_batches if total_batches > 0 else float('nan')
+    return average_loss, mmin, mmax
