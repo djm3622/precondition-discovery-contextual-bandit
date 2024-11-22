@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import os
 from Model import scipy
+import random
 
 
 def view_matrix(batch_mat, ind, ax):
@@ -113,3 +114,22 @@ def solver_results(inst, directory, device, extra):
 
     _, info = scipy.run_solver(iput, output, device)
     print(f'Mean residuals ({extra}): {torch.mean(info["last_residual"])}')
+    
+    
+def train_valid_split(files, train_ratio=0.8, random_seed=None):
+    if random_seed is not None:
+        random.seed(random_seed)
+    
+    shuffled_files = files.copy()
+    random.shuffle(shuffled_files)
+    
+    split_idx = int(len(files) * train_ratio)
+    
+    train_files = shuffled_files[:split_idx]
+    validation_files = shuffled_files[split_idx:]
+    
+    print(f"Total files: {len(files)}")
+    print(f"Training files: {len(train_files)} ({len(train_files)/len(files)*100:.1f}%)")
+    print(f"Validation files: {len(validation_files)} ({len(validation_files)/len(files)*100:.1f}%)")
+    
+    return train_files, validation_files

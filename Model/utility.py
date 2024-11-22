@@ -22,6 +22,8 @@ def check_point(current_val_loss, best_val_loss, model, save_path):
     return best_val_loss
     
     
+# TODO update to take in a step functions
+# use the one from koopman vit as reference
 def shared_training_loop(epoches, criterion, train_loader, valid_loader, model, lr, size, batch_size, device, verbose, file_path):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, threshold=1e-2)

@@ -184,3 +184,8 @@ class LuFCN(nn.Module):
             full_matrix = full_matrix + self.diagonal_bias * torch.eye(self.n).to(full_matrix.device)
         
         return torch.where(torch.abs(full_matrix) < self.sparse_tol, torch.zeros_like(full_matrix), full_matrix)
+    
+    
+    
+def actor_step():
+    pass
