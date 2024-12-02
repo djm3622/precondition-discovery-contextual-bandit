@@ -20,7 +20,7 @@ class SystemDataset(Dataset):
         A = torch.from_numpy(self.generator(self.size, perturbation_strength=self.perturbation_strength)[0].toarray())
         A = self.norm_features(A)
         A = torch.where(torch.abs(A) < 1e-1, torch.zeros_like(A), A)
-        b = torch.randn(self.size).unsqueeze(-1)
+        b = torch.randn(self.size**2).unsqueeze(-1)
         
         return A, b
     

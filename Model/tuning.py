@@ -121,6 +121,7 @@ def tuning_loop(epoches, criterion, train_loader, model, optimizer, batch_size, 
             output = model(A.view(batch_size, size*size))
             loss = criterion(A, output.view(batch_size, size, size))
             
+            
             if torch.isnan(output).any():
                 raise Exception("Nan value encountered.")
                 

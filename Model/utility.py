@@ -8,11 +8,20 @@ from collections import defaultdict
 
 
 def load_model(model, state_dict_path):
-    model.load_state_dict(torch.load(state_dict_path))
+    model.load_state_dict(torch.load(state_dict_path, weights_only=True))
     
     
 def save_model(model, state_dict_path):
     torch.save(model.state_dict(), state_dict_path)
+    
+    
+def freeze(model):
+    for param in model.parameters():
+        param.requires_grad = False
+        
+def unfreeze(model):
+    for param in model.parameters():
+        param.requires_grad = True
 
     
 def check_point(current_val_loss, best_val_loss, model, save_path):
@@ -24,7 +33,8 @@ def check_point(current_val_loss, best_val_loss, model, save_path):
     
 # TODO update to take in a step functions
 # use the one from koopman vit as reference
-def shared_training_loop(epoches, criterion, train_loader, valid_loader, model, lr, size, batch_size, device, verbose, file_path):
+def shared_training_loop(epoches, criterion, step, train_loader, valid_loader, 
+                         model, lr, size, batch_size, device, verbose, file_path, accumulation_steps=1):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, threshold=1e-2)
 
@@ -33,33 +43,31 @@ def shared_training_loop(epoches, criterion, train_loader, valid_loader, model, 
     
     for epoch in range(epoches):
         
+        optimizer.zero_grad()  # Clear gradients at the start of each epoch
+        
         train_loss = 0
         model.train()
         t_loader = tqdm(train_loader, desc=f'Train', leave=False, mininterval=2.0) if verbose else train_loader
-        for batch in t_loader:
-            A, b = batch
-            A, b = A.to(device), b.to(device)
-            output = model(A.view(batch_size, size*size))
-            loss = criterion(A, output.view(batch_size, size, size))
+        for batch_idx, batch in enumerate(t_loader):
+            loss = step(batch, model, criterion, device, size, batch_size)
 
             if verbose:
                 t_loader.set_postfix(train_loss=loss.item())
                 
             train_loss += loss.item()
 
-            optimizer.zero_grad() 
-            loss.backward()
-            optimizer.step()
+            loss = loss / accumulation_steps 
+            loss.backward()  
+            if (batch_idx + 1) % accumulation_steps == 0 or (batch_idx + 1) == len(t_loader):
+                optimizer.step()
+                optimizer.zero_grad()
             
         valid_loss = 0
         model.eval()
         v_loader = tqdm(valid_loader, desc=f'Valid', leave=False, mininterval=2.0) if verbose else valid_loader
         for batch in v_loader:
             with torch.no_grad():
-                A, b = batch
-                A, b = A.to(device), b.to(device)
-                output = model(A.view(batch_size, size*size))
-                loss = criterion(A, output.view(batch_size, size, size))
+                loss = step(batch, model, criterion, device, size, batch_size)
 
                 if verbose:
                     v_loader.set_postfix(valid_loss=loss.item())

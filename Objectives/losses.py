@@ -1,5 +1,6 @@
 from torch import nn
 import torch
+from Objectives import reward
 
 
 class CondEyeDistance(nn.Module):
@@ -30,3 +31,36 @@ class CondEyeDistance(nn.Module):
             avg_loss += self.l1 * torch.norm(outp, p=1)
         
         return avg_loss
+    
+
+class CriticMultiRewardLoss(nn.Module):
+    def __init__(self, a1, a2, a3, reward_func):
+        super().__init__()
+        self.mse = nn.MSELoss()
+        self.a1 = a1
+        self.a2 = a2
+        self.a3 = a3
+        self.reward_func = reward_func
+    
+    def forward(self, sparse_est, iter_est, res_est, A, M, b):
+        sparse_ref, iter_ref, res_ref = self.reward_func.forward(A, M, b)
+        sparse_ref = sparse_ref.unsqueeze(-1)
+        
+        sparse_error = torch.mean(self.mse(sparse_est, sparse_ref.float()))
+        iter_error = ((iter_est.max() - iter_ref)**2)
+        res_error = torch.mean(self.mse(res_est, res_ref.float()))
+                        
+        return self.a1 * sparse_error + self.a2 * iter_error + self.a3 * res_error
+    
+
+# TODO
+class CriticSingleRewardLoss(nn.Module):
+    def __init__(self):
+        pass
+    
+    def forward(self, ):
+        
+        
+        
+        
+        return 0
