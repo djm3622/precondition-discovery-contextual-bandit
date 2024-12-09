@@ -55,12 +55,37 @@ class CriticMultiRewardLoss(nn.Module):
 
 # TODO
 class CriticSingleRewardLoss(nn.Module):
-    def __init__(self):
-        pass
+    def __init__(self, a1, a2, a3, reward_func):
+        super().__init__()
+        self.mse = nn.MSELoss()
+        self.a1 = a1
+        self.a2 = a2
+        self.a3 = a3
+        self.reward_func = reward_func
     
-    def forward(self, ):
-        
-        
-        
-        
-        return 0
+    def forward(self, loss, A, M, b):
+        sparse_ref, iter_ref, res_ref = self.reward_func.forward(A, M, b)
+        sparse_ref = sparse_ref.unsqueeze(-1)
+                
+        truth = self.a1 * sparse_ref.float() + self.a2 * iter_ref + self.a3 * res_ref.float()                       
+        return self.mse(loss, truth)
+    
+    
+# TODO
+class CriticSingleRewardLossMod(nn.Module):
+    def __init__(self, a1, a2, a3, a4, reward_func):
+        super().__init__()
+        self.mse = nn.MSELoss()
+        self.a1 = a1
+        self.a2 = a2
+        self.a3 = a3
+        self.a4 = a4
+        self.reward_func = reward_func
+    
+    def forward(self, loss, A, M, b):
+        sparse_v, res_v, iters_v, cond = self.reward_func.forward(A, M, b)
+        sparse_v = sparse_v.unsqueeze(-1)
+        cond = cond.unsqueeze(-1)
+                
+        truth = self.a1 * sparse_v.float() + self.a2 * iters_v + self.a3 * res_v.float() + self.a4 * cond                
+        return self.mse(loss, truth)

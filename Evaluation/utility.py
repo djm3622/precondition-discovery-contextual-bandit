@@ -96,3 +96,33 @@ def evaluate_parameters(single_params, parameter, criterion, directory, device, 
         data_utility.solver_results(minn, directory, device, 'Minimum')
         data_utility.solver_results(maxx, directory, device, 'Maximum')
         data_utility.calc_results(avg, minn, maxx, 0, directory, size)
+
+        
+
+def bootstrap_train_log(file_path):
+    actor_values = []
+    critic_values = []
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            if "Actor=" in line and "Critic=" in line:
+                # Extract the actor and critic values
+                parts = line.strip().split(", ")
+                actor_value = float(parts[0].split("Actor=")[-1])
+                critic_value = float(parts[1].split("Critic=")[-1])
+                
+                actor_values.append(actor_value)
+                critic_values.append(critic_value)
+    
+    return actor_values, critic_values
+
+def plot_ac_training(actor_log, critic_log, title='Cosine Condition/Exploration Scheduler (No Cond)', file_path='cos_train_chol_nopre_nocond_1.png'):
+    plt.plot(actor_log, label="Actor")
+    plt.plot(critic_log, label="Critic")
+    plt.title(f'{title}: Train Log')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    
+    plt.savefig(file_path)
+    plt.show()

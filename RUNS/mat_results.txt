@@ -1,0 +1,7 @@
+1. 7 iterations, 0 sparse, 
+2. 25 iterations, 400 sparse
+3. 22 iterations, 0 sparse
+4. 20 iterations, 400 sparse
+5. 25 iterations, 100 sparse
+6. 20 iterations, 0 sparse
+7. 15 iterations, 0 sparse

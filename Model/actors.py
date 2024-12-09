@@ -83,13 +83,14 @@ class SymmetricIdFCN(nn.Module):
     
     
 class CholeskyFCN(nn.Module):
-    def __init__(self, n=25, hidden=256, batch_size=64, sparse_tol=1e-5, diagonal_bias=None):
+    def __init__(self, n=25, hidden=256, batch_size=64, sparse_tol=1e-5, diagonal_bias=None, tanh=False):
         super().__init__()
         
         self.n = n
         self.batch_size = batch_size
         self.sparse_tol = sparse_tol
         self.diagonal_bias = diagonal_bias
+        self.t = tanh
         lower_triangle_size = (n * (n + 1)) // 2
         
         self.fcn1 = nn.Linear(n * n, hidden)
@@ -100,6 +101,7 @@ class CholeskyFCN(nn.Module):
         self.fcn6 = nn.Linear(hidden, lower_triangle_size)
         
         self.act = nn.ReLU()
+        self.tanh = nn.Tanh()
         
     def forward(self, inpt):
         out = self.act(self.fcn1(inpt))
@@ -124,7 +126,8 @@ class CholeskyFCN(nn.Module):
         if self.diagonal_bias is not None:
             full_matrix = full_matrix + self.diagonal_bias * torch.eye(self.n).to(full_matrix.device)
         
-        return torch.where(torch.abs(full_matrix) < self.sparse_tol, torch.zeros_like(full_matrix), full_matrix)
+        out = torch.where(torch.abs(full_matrix) < self.sparse_tol, torch.zeros_like(full_matrix), full_matrix)
+        return self.tanh(out) if self.t else out
     
     
 class LuFCN(nn.Module):

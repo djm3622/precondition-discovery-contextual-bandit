@@ -48,10 +48,12 @@ def get_traditional_preconditioners(batch_matrix, ind, fill_factor, max_levels, 
     ax2.set_yticks([])
     
     im3 = ax3.matshow(amg @ np.eye(mat.shape[0]))
-    ax3.set_title(f'AMG({10})')
+    ax3.set_title(f'AMG({max_levels})')
     plt.colorbar(im3, ax=ax3)
     ax3.set_xticks([])
     ax3.set_yticks([])
+    
+    plt.savefig('trad.png')
     
     return jac, ilu, amg
 
