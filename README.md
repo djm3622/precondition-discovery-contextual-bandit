@@ -68,27 +68,3 @@ foo
 │   └── rewards.py
 └── README.md
 ```
-
-## Contributions
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-Specify the license (e.g., MIT, Apache 2.0)
-
-## Contact
-
-- Project Maintainer: [Your Name]
-- Project Link: https://github.com/djm3622/precondition-discovery-contextual-bandit
-
-## Acknowledgments
-
-- List any references, papers, or resources that inspired this project
-- Mention any funding sources or institutional support
