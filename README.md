@@ -22,7 +22,48 @@ Traditional preconditioners such as Jacobi, Incomplete LU, and Algebraic Multigr
 ### Pre-Training Actor
 
 ```python
-foo
+...
+model_params = {
+    'n':Config.mat_size,
+    'hidden':Config.hidden,
+    'batch_size':Config.batch_size,
+    'sparse_tol':Config.sparse_tol,
+    'diagonal_bias':Config.diagonal_bias
+}
+model = actors.CholeskyFCN(**model_params).to(device)
+
+loss_params = {
+    'l1': Config.l1,
+    'inv': Config.inv,
+    'dev': Config.dev,
+    'cond': Config.cond,
+    'batch_size': Config.batch_size,
+    'size': Config.mat_size
+}
+criterion = losses.CondEyeDistance(**loss_params)
+
+def step(batch, model, criterion, device, size, batch_size):
+    A, b = batch
+    A, b = A.to(device), b.to(device)
+    output = model(A.view(batch_size, size*size))
+    return criterion(A, output.view(batch_size, size, size))
+
+training_params = {
+    'epoches': Config.epoches,
+    'criterion': criterion,
+    'step': step,
+    'train_loader': train_dataloader,
+    'valid_loader': valid_dataloader,
+    'model': model,
+    'lr': Config.lr,
+    'size': Config.mat_size,
+    'batch_size': Config.batch_size,
+    'device': device,
+    'verbose': Config.verbose,
+    'file_path': Config.file_path
+}
+train_log, valid_log = model_utility.shared_training_loop(**training_params)
+...
 ```
 
 ### Pre-Training Critic
