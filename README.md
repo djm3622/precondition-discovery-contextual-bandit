@@ -20,7 +20,7 @@ Traditional preconditioners such as Jacobi, Incomplete LU, and Algebraic Multigr
 ## Usage
 
 ### Pre-Training Actor
-
+For an in-depth example, please refer to <a href='https://github.com/djm3622/precondition-discovery-contextual-bandit/blob/main/JScripts/script_testing.ipynb'>/JScripts/script_testing.ipynb<a>.
 ```python
 ...
 model_params = {
