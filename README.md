@@ -67,13 +67,116 @@ train_log, valid_log = model_utility.shared_training_loop(**training_params)
 ```
 
 ### Pre-Training Critic
+To generate the pretraining data from the hyperparameter tuning of multiple actors please refer to <a href='https://github.com/djm3622/precondition-discovery-contextual-bandit/blob/main/JScripts/hyperparameter_tuning.ipynb'>/JScripts/hyperparameter_tuning.ipynb<a>
+For an in-depth example, please refer to <a href='https://github.com/djm3622/precondition-discovery-contextual-bandit/blob/main/JScripts/pretrain_critic.ipynb'>/JScripts/pretrain_critic.ipynb<a>.
 ```python
-foo
+...
+model_params = {
+    'n': Config.n, 
+    'down': Config.down, 
+    'batch_size': Config.batch_size, 
+    'sigmoid_scale': Config.sigmoid
+}
+critic = critics.SmallerSingleCritic(**model_params).to(device)
+
+reward_func = reward.batched_reward(25, False, False)
+criterion = losses.CriticSingleRewardLoss(1, 1, 1, reward_func)
+
+def step(batch, model, criterion, device, size, batch_size):
+    A, M, b = critic_dataset.postprocess(*batch)
+    A, M, b = A.to(device).float(), M.to(device).float(), b.to(device).float()
+    inp = torch.concat([A.view(batch_size, size**2), M.view(batch_size, size**2)], dim=1)
+    
+    out = model(inp)
+    
+    loss = criterion(out, A, M, b)
+    return loss
+
+training_params = {
+    'epoches': Config.epoches,
+    'criterion': criterion,
+    'step': step,
+    'train_loader': train_dl,
+    'valid_loader': valid_dl,
+    'model': critic,
+    'lr': Config.lr,
+    'size': Config.mat_size,
+    'batch_size': Config.batch_size,
+    'device': device,
+    'verbose': Config.verbose,
+    'file_path': Config.file_path,
+    'accumulation_steps': 1
+}
+train_log, valid_log = model_utility.shared_training_loop(**training_params)
+...
 ```
 
 ### Complete Algorithm
+For an in-depth example, please refer to <a href='https://github.com/djm3622/precondition-discovery-contextual-bandit/blob/main/JScripts/actor_critic-experimental.ipynb'>/JScripts/actor_critic-experimental.ipynb<a>.
 ```python
-foo
+...
+critic_params = {
+    'n': Config.n, 
+    'down': Config.down, 
+    'batch_size': Config.batch_size, 
+    'sigmoid_scale': Config.sigmoid
+}
+
+critic = critics.SmallerSingleCritic(**critic_params).to(device)
+
+reward_func = reward.batched_reward(Config.n, False, Config.switch_up)
+if Config.multi:
+    critic_crit = losses.CriticMultiRewardLoss(Config.sparse, Config.niter, Config.res, reward_func)
+else:
+    critic_crit = losses.CriticSingleRewardLoss(Config.sparse, Config.niter, Config.res, reward_func)
+
+actor_params = {
+    'n':Config.n,
+    'hidden':Config.hidden,
+    'batch_size':Config.batch_size,
+    'sparse_tol':Config.sparse_tol,
+    'diagonal_bias':Config.diagonal_bias
+}
+actor = actors.LuFCN(**actor_params).to(device)
+
+loss_params = {
+    'l1': Config.l1,
+    'inv': Config.inv,
+    'dev': Config.dev,
+    'cond': Config.cond,
+    'batch_size': Config.batch_size,
+    'size': Config.n
+}
+actor_crit = losses.CondEyeDistance(**loss_params)
+
+train_log, valid_log = [], []
+
+def step(...):
+   ....
+
+ddpg_params = {
+    'epoches': 1250,
+    'actor': actor,
+    'critic': critic,
+    'train_set': train_dataloader,
+    'valid_set': valid_dataloader,
+    'device': device,
+    'train_log': train_log,
+    'valid_log': valid_log,
+    'critic_crit': critic_crit,
+    'actor_crit': actor_crit,
+    'actor_lr': 1e-6,
+    'critic_lr': 1e-6,
+    'memory': 10000, 
+    'wait': 32,
+    'step': step,
+    'verbose': False,
+    'buffer': buffer,
+    'condition_scheduler': condition_scheduler,
+    'noise_scheduler': noise_scheduler
+}
+buffer, condition_scheduler, noise_scheduler, actor_optim, critic_optim = ac_training.train_experimental(**ddpg_params)
+...
 ```
 
 ---
